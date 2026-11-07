@@ -1,0 +1,24 @@
+[project]
+name = "zenith"
+version = "0.1.0"
+description = "Looped Mamba-3 language model with MobileLLM-R1 training recipes"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.4",
+    "transformers>=4.55",
+    "datasets",
+    "tokenizers",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["zenith"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,15 @@
+{
+  "architectures": ["ZenithForCausalLM"],
+  "model_type": "zenith",
+  "vocab_size": 32000,
+  "d_model": 640,
+  "d_state": 128,
+  "expand": 2,
+  "headdim": 64,
+  "chunk_size": 64,
+  "n_input": 4,
+  "n_recurrent": 16,
+  "n_output": 4,
+  "max_loops": 4,
+  "tie_word_embeddings": true
+}
