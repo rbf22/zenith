@@ -62,6 +62,7 @@ def main():
     p.add_argument("--save_steps", type=int, default=500)
     p.add_argument("--log_steps", type=int, default=10)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--grad_accum", type=int, default=1, help="micro-batches per optimizer step")
     p.add_argument("--compile_scan", action="store_true", help="torch.compile the SSD scan (about 2x faster on MPS)")
     args = p.parse_args()
 
@@ -97,16 +98,19 @@ def main():
     model.train()
     for step in range(start, args.max_steps):
         k = sample_loops(step, 0, max_loops=cfg.max_loops)
-        ids = get_batch(tokens, args.batch_size, args.seq_len, gen).to(device)
-        with amp_context(device):
-            loss = model(ids, labels=ids, loops=k).loss
-        loss.backward()
+        losses = []
+        for _ in range(args.grad_accum):
+            ids = get_batch(tokens, args.batch_size, args.seq_len, gen).to(device)
+            with amp_context(device):
+                loss = model(ids, labels=ids, loops=k).loss
+            (loss / args.grad_accum).backward()
+            losses.append(loss.item())
         torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
         opt.step()
         sched.step()
         opt.zero_grad(set_to_none=True)
         if step % args.log_steps == 0:
-            print(json.dumps({"step": step, "loss": round(loss.item(), 4), "loops": k, "lr": sched.get_last_lr()[0]}), flush=True)
+            print(json.dumps({"step": step, "loss": round(sum(losses) / len(losses), 4), "loops": k, "lr": sched.get_last_lr()[0]}), flush=True)
         if (step + 1) % args.save_steps == 0 or step + 1 == args.max_steps:
             model.save_pretrained(args.output_dir)
             tokenizer.save_pretrained(args.output_dir)

@@ -146,3 +146,22 @@ def test_amp_context_is_disabled_on_cpu():
 def test_pick_device_prefers_cuda_when_available(monkeypatch):
     monkeypatch.setattr(train.torch.cuda, "is_available", lambda: True)
     assert train.pick_device() == "cuda"
+
+
+def test_main_grad_accum_draws_one_batch_per_micro_step(tmp_path, tokenizer, tiny_config_path, monkeypatch):
+    data = write_jsonl(tmp_path / "train.jsonl", ["the quick brown fox jumps over the lazy dog"] * 40)
+    calls = []
+    real_get_batch = train.get_batch
+
+    def counting_get_batch(*args):
+        calls.append(1)
+        return real_get_batch(*args)
+
+    monkeypatch.setattr(train, "get_batch", counting_get_batch)
+    monkeypatch.setattr(sys, "argv", [
+        "train", "--config", str(tiny_config_path), "--tokenizer", str(tmp_path / "tokenizer"),
+        "--data", str(data), "--output_dir", str(tmp_path / "run"), "--seq_len", "32", "--batch_size", "2",
+        "--max_steps", "2", "--warmup_steps", "1", "--save_steps", "10", "--log_steps", "1", "--grad_accum", "2",
+    ])
+    train.main()
+    assert len(calls) == 4
