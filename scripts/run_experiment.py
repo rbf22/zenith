@@ -21,6 +21,7 @@ def main():
     p.add_argument("--lr", default="2e-4")
     p.add_argument("--steps", type=int, default=300)
     p.add_argument("--warmup", type=int, default=30)
+    p.add_argument("--grad_accum", type=int, default=1)
     args = p.parse_args()
 
     data = os.path.join(args.drive, "zenith_data")
@@ -39,7 +40,7 @@ def main():
         run([sys.executable, "-m", "zenith.train", "--config", "configs/target/config.json", "--tokenizer", tok,
              "--data", os.path.join(data, "train.jsonl"), "--output_dir", ckpt, "--seq_len", "512", "--batch_size", "2",
              "--max_steps", str(args.steps), "--warmup_steps", str(args.warmup), "--lr", args.lr,
-             "--save_steps", "100000", "--log_steps", "25", "--compile_scan"], log_path=os.path.join(out, "train.log"))
+             "--save_steps", "100000", "--log_steps", "25", "--compile_scan", "--grad_accum", str(args.grad_accum)], log_path=os.path.join(out, "train.log"))
 
     run([sys.executable, "scripts/eval_ckpt.py", "--checkpoints", ckpt, "--tokenizer", tok,
          "--heldout", os.path.join(data, "heldout.jsonl"), "--max_windows", "128"], log_path=os.path.join(out, "eval.log"))
