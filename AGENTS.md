@@ -49,3 +49,7 @@ Looped Mamba-3 language model (Dory-style recurrent block) trained with MobileLL
 - Keep sequence lengths a multiple of `chunk_size` (64 for the target config).
 - The LM head is tied to the embedding (`_tied_weights_keys` is a dict in transformers 4.57+).
 - Layers in the recurrent block are shared across loops. Only the final loop is tracked by autograd (truncated BPTT depth 1).
+
+## Future work
+
+- Byte-level / encoder-free models (MambaByte, Byte Latent Transformer). Idea: a controlled ablation at equal training bytes, reported as bits per byte, with wall-clock cost. Deferred: byte sequences are about 4x longer than our 32k BPE tokens (4.3 chars per token), which multiplies scan and loop cost. Verify MambaByte's reported results before acting.
